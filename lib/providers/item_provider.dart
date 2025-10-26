@@ -43,6 +43,19 @@ class ItemProvider extends ChangeNotifier {
     await loadItems();
   }
 
+  Future<void> updateItem(Item item) async {
+    try {
+      if (item.category.isEmpty || item.category == 'packaged') {
+        item.category = ItemCategorizer.categorizeCategory(item.name, item.itemType);
+      }
+      if (item.foodType.isEmpty || item.foodType == 'dry') {
+        item.foodType = ItemCategorizer.categorizeFoodType(item.name, item.itemType);
+      }
+    } catch (_) {}
+    await DBHelper.instance.updateItem(item);
+    await loadItems();
+  }
+
   Future<void> deleteItem(int id) async {
     await DBHelper.instance.deleteItem(id);
     await loadItems();

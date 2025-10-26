@@ -44,6 +44,7 @@ dependencies:
   cached_network_image: ^3.2.3
   shared_preferences: ^2.1.1
   country_picker: ^2.0.15
+  google_mlkit_text_recognition: ^0.15.0
   # flutter_local_notifications: ^19.5.0
   # flutter_native_timezone: ^2.0.0
 

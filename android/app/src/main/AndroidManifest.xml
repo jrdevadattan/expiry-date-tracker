@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required permission for camera capture used by image picker and OCR -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="tracker"
         android:name="${applicationName}"

@@ -223,14 +223,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // spacer for FAB
               const SizedBox(width: 72),
-              // Right tab (Shop)
+              // Right tab (AI Chat)
               Expanded(
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+                    );
+                  },
                   child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.shopping_bag_outlined, color: Colors.grey[700]),
+                    Icon(Icons.smart_toy, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 4),
-                    Text('Shop', style: TextStyle(color: Colors.grey[700], fontSize: 12)),
+                    Text('AI Chat', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
                   ]),
                 ),
               ),
@@ -239,34 +243,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Main Scanner FAB (center)
-          SizedBox(
-            height: 72,
-            width: 72,
-            child: FloatingActionButton(
-              heroTag: 'scanner',
-              backgroundColor: const Color(0xFF00C853), // bright green
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanScreen())),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.qr_code_scanner, size: 28), SizedBox(height: 2)]),
-            ),
-          ),
-          // AI Chatbot FAB (positioned to the bottom-right of screen)
-          Positioned(
-            bottom: 0,
-            left: MediaQuery.of(context).size.width * 0.5 + 60, // Position to the right of center FAB
-            child: FloatingActionButton(
-              heroTag: 'chatbot',
-              backgroundColor: const Color(0xFF00C853),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-              ),
-              child: const Icon(Icons.smart_toy, size: 24),
-            ),
-          ),
-        ],
+      floatingActionButton: SizedBox(
+        height: 72,
+        width: 72,
+        child: FloatingActionButton(
+          heroTag: 'scanner',
+          backgroundColor: const Color(0xFF00C853), // bright green
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanScreen())),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.qr_code_scanner, size: 28), SizedBox(height: 2)]),
+        ),
       ),
       persistentFooterButtons: [],
     );

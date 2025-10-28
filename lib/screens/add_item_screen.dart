@@ -27,6 +27,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String? _networkImageUrl;
   int? _editingId;
 
+  // Available item types with icons
+  static const List<Map<String, dynamic>> _itemTypes = [
+    {'name': 'Food', 'icon': Icons.restaurant},
+    {'name': 'Beverage', 'icon': Icons.local_drink},
+    {'name': 'Dairy', 'icon': Icons.icecream},
+    {'name': 'Snacks', 'icon': Icons.cookie},
+    {'name': 'Medicine', 'icon': Icons.medical_services},
+    {'name': 'Cosmetics', 'icon': Icons.face_retouching_natural},
+    {'name': 'Baby Products', 'icon': Icons.child_care},
+    {'name': 'Supplements', 'icon': Icons.vaccines},
+    {'name': 'Other', 'icon': Icons.category},
+  ];
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -36,7 +49,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   Future<void> _pickImage() async {
     final p = ImagePicker();
-    final file = await p.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    final file = await p.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 60, // Reduce quality for better performance
+      maxWidth: 800,    // Limit image size
+      maxHeight: 800,
+    );
     if (file != null) setState(() => _image = file);
   }
 
@@ -113,48 +131,280 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget build(BuildContext context) {
     // Build UI that matches the provided mock exactly: minimal controls, product header,
     // details cards and a single large green add button.
-    Widget buildHeader() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add new item'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18),
+        child: Column(
+          children: [
+            // Header with thumbnail and title
+            _buildHeader(),
+            const SizedBox(height: 18),
+            // Details label
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Details',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Cards - extract to separate methods to avoid rebuilding all
+            _buildTypeCard(),
+            const SizedBox(height: 12),
+            _buildQuantityCard(),
+            const SizedBox(height: 12),
+            _buildPurchasedCard(),
+            const SizedBox(height: 12),
+            _buildExpiryCard(),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '*Please confirm or change the expiry date as mentioned on the item!',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
+            const Spacer(),
+            // Large centered green pill button
+            _buildSaveButton(),
+            const SizedBox(height: 6),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
       final thumb = _image != null
-          ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(_image!.path), width: 64, height: 64, fit: BoxFit.cover))
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                File(_image!.path),
+                width: 64,
+                height: 64,
+                fit: BoxFit.cover,
+                cacheWidth: 128, // Cache at reasonable size
+                cacheHeight: 128,
+              ),
+            )
           : (_networkImageUrl != null
-              ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(_networkImageUrl!, width: 64, height: 64, fit: BoxFit.cover))
-              : Container(width: 64, height: 64, decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.image, size: 28, color: Colors.grey)));
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    _networkImageUrl!,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    cacheWidth: 128,
+                    cacheHeight: 128,
+                  ),
+                )
+              : Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.image, size: 28, color: Colors.grey),
+                ));
 
       final title = _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'Unnamed item';
 
-      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        GestureDetector(onTap: _pickImage, child: thumb),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            InkWell(onTap: _editNameDialog, child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600), maxLines: 3, overflow: TextOverflow.ellipsis)),
-            const SizedBox(height: 8),
-            // subtle underline below title
-            Container(height: 1, color: Colors.grey[300]),
-          ]),
-        )
-      ]);
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(onTap: _pickImage, child: thumb),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: _editNameDialog,
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // subtle underline below title
+                Container(height: 1, color: Colors.grey[300]),
+              ],
+            ),
+          )
+        ],
+      );
     }
 
-    Widget detailCard({required String label, required String value, VoidCallback? onTap}) {
+  Widget _buildTypeCard() {
+    return _detailCard(
+      label: 'Item type',
+      value: _type,
+      onTap: () async {
+        final res = await showModalBottomSheet<String>(
+          context: context,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (ctx) => Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    'Select Item Type',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: _itemTypes.map((type) {
+                      final isSelected = type['name'] == _type;
+                      return ListTile(
+                        leading: Icon(
+                          type['icon'] as IconData,
+                          color: isSelected ? const Color(0xFF10B981) : Colors.grey[600],
+                        ),
+                        title: Text(
+                          type['name'] as String,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected ? const Color(0xFF10B981) : Colors.black87,
+                          ),
+                        ),
+                        trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF10B981)) : null,
+                        onTap: () => Navigator.of(ctx).pop(type['name'] as String),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        if (res != null) setState(() => _type = res);
+      },
+    );
+  }
+
+  Widget _buildQuantityCard() {
+    return _detailCard(
+      label: 'Quantity',
+      value: _quantityCtrl.text.isNotEmpty ? _quantityCtrl.text : '1',
+      onTap: () async {
+        final v = await showDialog<String?>(
+          context: context,
+          builder: (ctx) {
+            final c = TextEditingController(text: _quantityCtrl.text);
+            return AlertDialog(
+              title: const Text('Quantity'),
+              content: TextField(controller: c, keyboardType: TextInputType.text),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('OK')),
+              ],
+            );
+          },
+        );
+        if (v != null) setState(() => _quantityCtrl.text = v);
+      },
+    );
+  }
+
+  Widget _buildPurchasedCard() {
+    return _detailCard(
+      label: 'Purchased',
+      value: _fmtPurchased(_purchased),
+      onTap: () => _pickDate(expiry: false),
+    );
+  }
+
+  Widget _buildExpiryCard() {
+    return _detailCard(
+      label: 'Expires on',
+      value: _fmtDate(_expiry),
+      onTap: () => _pickDate(expiry: true),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _save,
+        icon: const Icon(Icons.check, size: 20),
+        label: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 14.0),
+          child: Text('Add this item', style: TextStyle(fontSize: 16)),
+        ),
+        style: ElevatedButton.styleFrom(
+          shape: const StadiumBorder(),
+          backgroundColor: const Color(0xFF10B981),
+          elevation: 6,
+          shadowColor: Colors.black45,
+        ),
+      ),
+    );
+  }
+
+  Widget _detailCard({required String label, required String value, VoidCallback? onTap}) {
       return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(label, style: TextStyle(color: Colors.grey[700])),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(value, textAlign: TextAlign.right, style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
-            )
-          ]),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: TextStyle(color: Colors.grey[700])),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xFF10B981),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            ],
+          ),
         ),
       );
     }
 
-    String fmtDate(DateTime d) {
+  String _fmtDate(DateTime d) {
       // e.g. 01 Jan 2022
       final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       final dd = d.day.toString().padLeft(2, '0');
@@ -163,58 +413,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
       return '$dd $mm $yy';
     }
 
-    String fmtPurchased(DateTime d) {
+  String _fmtPurchased(DateTime d) {
       final now = DateTime.now();
       if (d.year == now.year && d.month == now.month && d.day == now.day) {
-        final mon = '${d.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.month - 1]} ${d.year}';
+        final mon = '${d.day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} ${d.year}';
         return 'Today ($mon)';
       }
-      return '${d.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.month - 1]} ${d.year}';
+      return '${d.day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} ${d.year}';
     }
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add new item'), leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).pop())),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18),
-        child: Column(children: [
-          // Header with thumbnail and title
-          buildHeader(),
-          const SizedBox(height: 18),
-          // Details label
-          Align(alignment: Alignment.centerLeft, child: Text('Details', style: Theme.of(context).textTheme.bodyMedium)),
-          const SizedBox(height: 12),
-          // Cards
-          detailCard(label: 'Item type', value: _type, onTap: () async {
-            final res = await showModalBottomSheet<String>(context: context, builder: (ctx) => Column(mainAxisSize: MainAxisSize.min, children: ['Food','Drink','Other'].map((t) => ListTile(title: Text(t), onTap: () => Navigator.of(ctx).pop(t))).toList()));
-            if (res != null) setState(() => _type = res);
-          }),
-          const SizedBox(height: 12),
-          detailCard(label: 'Quantity', value: _quantityCtrl.text.isNotEmpty ? _quantityCtrl.text : '1', onTap: () async {
-            final v = await showDialog<String?>(context: context, builder: (ctx) { final c = TextEditingController(text: _quantityCtrl.text); return AlertDialog(title: const Text('Quantity'), content: TextField(controller: c), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('OK'))]); });
-            if (v != null) setState(() => _quantityCtrl.text = v);
-          }),
-          const SizedBox(height: 12),
-          detailCard(label: 'Purchased', value: fmtPurchased(_purchased), onTap: () => _pickDate(expiry: false)),
-          const SizedBox(height: 12),
-          detailCard(label: 'Expires on', value: fmtDate(_expiry), onTap: () => _pickDate(expiry: true)),
-          const SizedBox(height: 12),
-          Align(alignment: Alignment.centerLeft, child: Text('*Please confirm or change the expiry date as mentioned on the item!', style: TextStyle(color: Colors.grey[600], fontSize: 12))),
-          const Spacer(),
-          // Large centered green pill button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.check, size: 20),
-              label: const Padding(padding: EdgeInsets.symmetric(vertical: 14.0), child: Text('Add this item', style: TextStyle(fontSize: 16))),
-              style: ElevatedButton.styleFrom(shape: const StadiumBorder(), backgroundColor: const Color(0xFF10B981), elevation: 6, shadowColor: Colors.black45),
-            ),
-          ),
-          const SizedBox(height: 6),
-        ]),
-      ),
-    );
-  }
 
   // OCR-from-URL helper removed; kept the minimal screen per mock
 

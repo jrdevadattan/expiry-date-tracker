@@ -60,4 +60,26 @@ class ItemProvider extends ChangeNotifier {
     await DBHelper.instance.deleteItem(id);
     await loadItems();
   }
+
+  Future<void> importItem(Item item) async {
+    // Import an item without triggering auto-categorization
+    // (assume imported data already has correct categorization)
+    await DBHelper.instance.insertItem(item);
+    await loadItems();
+  }
+
+  Future<int> importItems(List<Item> items) async {
+    int count = 0;
+    for (final item in items) {
+      try {
+        await DBHelper.instance.insertItem(item);
+        count++;
+      } catch (e) {
+        // Skip items that fail to import (e.g., duplicates, invalid data)
+        debugPrint('Failed to import item: ${item.name} - $e');
+      }
+    }
+    await loadItems();
+    return count;
+  }
 }

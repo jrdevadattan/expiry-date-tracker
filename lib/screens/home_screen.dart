@@ -55,62 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: false,
         title: const Text('Good morning', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 28)),
         actions: [
-          // Sort button
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.sort),
-            onSelected: (value) {
-              setState(() {
-                _sortBy = value;
-              });
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'expiry',
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      'By Expiry Date',
-                      style: TextStyle(
-                        fontWeight: _sortBy == 'expiry' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'name',
-                child: Row(
-                  children: [
-                    const Icon(Icons.sort_by_alpha, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      'By Name',
-                      style: TextStyle(
-                        fontWeight: _sortBy == 'name' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'purchased',
-                child: Row(
-                  children: [
-                    const Icon(Icons.shopping_bag, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      'By Purchase Date',
-                      style: TextStyle(
-                        fontWeight: _sortBy == 'purchased' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
           // Settings button
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -296,21 +240,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Stack(
-        alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          // AI Chatbot FAB (positioned to the right)
-          Positioned(
-            bottom: 0,
-            right: 16,
-            child: FloatingActionButton(
-              heroTag: 'chatbot',
-              backgroundColor: const Color(0xFF00C853),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-              ),
-              child: const Icon(Icons.smart_toy, size: 28),
-            ),
-          ),
           // Main Scanner FAB (center)
           SizedBox(
             height: 72,
@@ -320,6 +251,19 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: const Color(0xFF00C853), // bright green
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanScreen())),
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [Icon(Icons.qr_code_scanner, size: 28), SizedBox(height: 2)]),
+            ),
+          ),
+          // AI Chatbot FAB (positioned to the bottom-right of screen)
+          Positioned(
+            bottom: 0,
+            left: MediaQuery.of(context).size.width * 0.5 + 60, // Position to the right of center FAB
+            child: FloatingActionButton(
+              heroTag: 'chatbot',
+              backgroundColor: const Color(0xFF00C853),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+              ),
+              child: const Icon(Icons.smart_toy, size: 24),
             ),
           ),
         ],

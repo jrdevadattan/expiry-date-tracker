@@ -286,13 +286,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       return ListTile(
                         leading: Icon(
                           type['icon'] as IconData,
-                          color: isSelected ? const Color(0xFF10B981) : Colors.grey[600],
+                          color: isSelected ? const Color(0xFF10B981) : null,
                         ),
                         title: Text(
                           type['name'] as String,
                           style: TextStyle(
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            color: isSelected ? const Color(0xFF10B981) : Colors.black87,
+                            color: isSelected ? const Color(0xFF10B981) : null,
                           ),
                         ),
                         trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF10B981)) : null,
